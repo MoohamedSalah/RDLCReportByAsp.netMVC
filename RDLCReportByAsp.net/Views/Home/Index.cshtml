@@ -6,14 +6,30 @@
 
 <div class="row">
     <br />
-    <div class="col-md-4">
+    <div class="col-md-12" style="margin: 5px;">
         <button class="btn btn-primary" id="btnGenerate">Load Report</button>
 
     </div>
 
-    <div class="col-md-4">
+    <div class="col-md-12" style="margin: 5px;">
+        <div class="col-sm-6 col-xs-6" style="float: right; text-align: end;">
+            <button type="button" class=" btn btn-success" onclick="UploadExcelFile()">
+                Upload
+            </button>
+        </div>
+
+        <div class="col-sm-6 col-xs-6" style="float: right; text-align: end;">
+            @* @Html.Label("Excel Path", htmlAttributes: new { @class = "control-label col-md-2" })*@
+            <div class="col-md-10">
+                <input type="file" id="ExcelFileAttachment" class="form-control" name="Excel File" required accept=".xlsx,.xls" />
+            </div>
+        </div>
+
+    </div>
+
+    <div class="col-md-12" style="margin: 5px;">
         <div class="col-sm-12 col-xs-12" style="float: right; text-align: end;">
-            <a href=""  class="btn btn-info"  id="DownloadFileEcxel"> @Html.Label("Download Templete", new { @class = "excel" })</a>
+            <a href="" class="btn btn-info" id="DownloadFileEcxel"> @Html.Label("Download Templete", new { @class = "excel" })</a>
         </div>
 
     </div>
@@ -24,15 +40,38 @@
     $(document).ready(function () {
 
         $("#btnGenerate").click(function () {
-            ReportManager.GenerateReport();
+            //window.open('../Reports/ActorReport.aspx', 'newtab');
+            $.ajax({
+                url: "@Url.Content("~/Home/GetActorReport")",
+                type: "POST",
+                
+                async: false,
+                processData: false,  // tell jQuery not to process the data
+                contentType: false,   // tell jQuery not to set contentType
+                dataType: 'json',
+                success: function () {
+                    window.open('../Reports/ActorReport.aspx', 'newtab');
+                },
+                error: function () {
+                    window.open('../Reports/ActorReport.aspx', 'newtab');
+                   
+                }
+            });
+            //ReportManager.GenerateReport();
         });
 
-    });
 
+    });
+    function UploadExcelFile() {
+
+        alert("Upload Moo No Problem");
+        SaveClientSheet();
+    }
     var ReportManager = {
         GenerateReport: function () {
             var jsonParam = "";
-            var serviceUrl = "@Url.Content("~/Home/GetActorReport")";
+            var serviceUrl = "@Url.Content("../Home/GetActorReport")";
+
             ReportManager.GetReport(serviceUrl, jsonParam,onFaild)
 
             function onFaild(error) {
@@ -40,9 +79,9 @@
             }
         },
 
-        GetReport: function (serverUrl, jsonParams, errorCallBack) {
+        GetReport: function (serviceUrl, jsonParams, errorCallBack) {
             jQuery.ajax({
-                URL: serverUrl,
+                URL: serviceUrl,
                 async: false,
                 type: "POST",
                 data: "{" + jsonParams + "}",
@@ -70,5 +109,38 @@
         return;
 
     });
+
+
+    function SaveClientSheet() {
+        var formdata = new FormData();
+        var Input = document.getElementById("ExcelFileAttachment");
+        if (Input.files.length === 0) {
+            alert("No Upload files");
+        }
+        else {
+            for (i = 0; i < Input.files.length; i++) {
+                formdata.append(Input.files[i].name, Input.files[i]);
+            }
+
+            $.ajax({
+                url: "@Url.Content("~/Home/SaveEcxelSheetData")",
+                type: "POST",
+                data: formdata,
+                processData: false,  // tell jQuery not to process the data
+                contentType: false,   // tell jQuery not to set contentType
+                dataType: 'json',
+                success: function (result) {
+                    alert(result.Message);
+
+                },
+                error: function (result) {
+                    alert("error");
+                }
+            });
+
+        }
+    }
+
+
 
 </script>

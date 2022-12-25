@@ -1,5 +1,7 @@
-﻿using OfficeOpenXml;
+﻿//using Microsoft.Office.Interop.Excel;
+using OfficeOpenXml;
 using OfficeOpenXml.Style;
+using RDLCReportByAsp.net.Models;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -7,6 +9,7 @@ using System.Data.SqlClient;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Web;
 using System.Web.Mvc;
@@ -36,11 +39,12 @@ namespace RDLCReportByAsp.net.Controllers
 
             return View();
         }
-
+        [HttpPost]
         public void GetActorReport()
         {
             var data = GetActorInfo();
             this.HttpContext.Session["Data"] = data.Tables[0];
+
         }
 
         private DataSet GetActorInfo()
@@ -98,7 +102,7 @@ namespace RDLCReportByAsp.net.Controllers
                         ws.Cells[1, i].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
                         ws.Cells[1, i].Style.VerticalAlignment = ExcelVerticalAlignment.Center;
 
-                        if (i == 1 )
+                        if (i == 1)
                         {
                             ws.Cells[1, i].Style.Fill.PatternType = ExcelFillStyle.Solid;
                             ws.Cells[1, i].Style.Fill.BackgroundColor.SetColor(Color.Red);
@@ -127,6 +131,96 @@ namespace RDLCReportByAsp.net.Controllers
             Response.End();
 
             return View("MyView");
+
+        }
+
+        public ActionResult SaveEcxelSheetData()
+        {
+            try
+            {
+
+                HttpPostedFileBase Upload = Request.Files[0];
+                string Extension = Path.GetExtension(Upload.FileName);
+                if (Extension == ".xls" || Extension == ".xlsx")
+                {
+                    string filePath = Server.MapPath("~/Upload/");
+                    bool folderExists = Directory.Exists(filePath);
+                    if (!folderExists)
+                    {
+                        Directory.CreateDirectory(filePath);
+                    }
+                    Upload.SaveAs(filePath + Upload.FileName);
+                    string fileSavedPath = filePath + Upload.FileName;
+
+                    var (ValidactorSheets, NotValidactorSheets) = SaveExcelSheetData(fileSavedPath);
+
+                   
+
+                    if (System.IO.File.Exists(fileSavedPath))
+                    {
+                        System.IO.File.Delete(fileSavedPath);
+                    }
+
+                    return Json(new { Message = "Saved Successfully" }, JsonRequestBehavior.AllowGet);
+                }
+
+                return Json(new { Message = "Saved Failed" }, JsonRequestBehavior.AllowGet);
+
+            }
+            catch
+            {
+                return Json(new { Message = "Saved Failed" }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        private (List<Actor> ValidactorSheets, List<ActorSheetData> NotValidactorSheets) SaveExcelSheetData(string filePath)
+        {
+
+            try
+            {
+                var existingFile = new FileInfo(filePath);
+                var listActorValid = new List<Actor>();
+                var listNotValid = new List<ActorSheetData>();
+
+                using (var package = new ExcelPackage(existingFile))
+                {
+                    var workBook = package.Workbook;
+                    if (workBook == null)
+                        return (new List<Actor>(), new List<ActorSheetData>());
+
+                    if (workBook.Worksheets.Count <= 0)
+                        return (new List<Actor>(), new List<ActorSheetData>());
+
+                    var ws = workBook.Worksheets.First();
+                    int totalRow = ws.Dimension.End.Row;
+                    int totalCol = ws.Dimension.End.Column;
+                    if (totalRow <= 1)
+                        return (new List<Actor>(), new List<ActorSheetData>());
+
+                    DateTime validDate;
+                    for (int j = 2; j <= totalRow; j++)
+                    {
+                        var ActorName = ws.Cells[j, 1].Value == null ? "" : ws.Cells[j, 1].Value.ToString();
+                        var Date = ws.Cells[j, 2].Value == null ? "" : ws.Cells[j, 2].Value.ToString();
+
+                        if (!DateTime.TryParse(Date, out validDate))
+                        {
+                            listNotValid.Add(new ActorSheetData() { RowNumber = j, IsValid = false, Massage = $"Can't Convert Value: {Date} To DateTime" });
+                        }
+
+                        listActorValid.Add(new Actor() { ActorName =ActorName,Date = validDate });
+    
+                    }
+                    return (listActorValid, listNotValid);
+
+                }
+            }
+            catch (Exception ex)
+            { 
+                return (new List<Actor>(), new List<ActorSheetData>());
+            }
+
+            
 
         }
     }
