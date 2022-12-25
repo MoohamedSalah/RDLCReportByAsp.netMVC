@@ -1,0 +1,58 @@
+﻿@{
+    ViewBag.Title = "Home Page";
+}
+
+
+
+<div class="row">
+    <div class="col-md-4">
+        <button class="btn btn-primary"  id="btnGenerate">Load Report</button>
+      
+    </div>
+   
+</div>
+
+<script>
+    $(document).ready(function () {
+
+        $("#btnGenerate").click(function () {
+            ReportManager.GenerateReport();
+        });
+
+    });
+
+    var ReportManager = {
+        GenerateReport: function () {
+            var jsonParam = "";
+            var serviceUrl = "../Home/GetActorReport";
+            ReportManager.GetReport(serviceUrl, jsonParam,onFaild)
+
+            function onFaild(error) {
+                alert(error);
+            }
+        },
+
+        GetReport: function (serverUrl, jsonParams, errorCallBack) {
+            jQuery.ajax({
+                URL: serverUrl,
+                async: false,
+                type: "POST",
+                data: "{" + jsonParams + "}",
+                contentType: "application/json; charset=utf-8",
+                success: function () {
+                    window.open('../Reports/ActorReport.aspx', 'newtab');
+                },
+                error: errorCallBack
+
+            });
+        }
+
+
+    };
+
+    var ReportHelper = {
+
+
+    };
+
+</script>
