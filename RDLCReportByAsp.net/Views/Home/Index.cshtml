@@ -5,11 +5,19 @@
 
 
 <div class="row">
+    <br />
     <div class="col-md-4">
-        <button class="btn btn-primary"  id="btnGenerate">Load Report</button>
-      
+        <button class="btn btn-primary" id="btnGenerate">Load Report</button>
+
     </div>
-   
+
+    <div class="col-md-4">
+        <div class="col-sm-12 col-xs-12" style="float: right; text-align: end;">
+            <a href=""  class="btn btn-info"  id="DownloadFileEcxel"> @Html.Label("Download Templete", new { @class = "excel" })</a>
+        </div>
+
+    </div>
+
 </div>
 
 <script>
@@ -24,7 +32,7 @@
     var ReportManager = {
         GenerateReport: function () {
             var jsonParam = "";
-            var serviceUrl = "../Home/GetActorReport";
+            var serviceUrl = "@Url.Content("~/Home/GetActorReport")";
             ReportManager.GetReport(serviceUrl, jsonParam,onFaild)
 
             function onFaild(error) {
@@ -54,5 +62,13 @@
 
 
     };
+
+    $("#DownloadFileEcxel").click(function (e) {
+        e.preventDefault();
+
+        window.location = "@Url.Content("~/Home/ExportExcelFile")";
+        return;
+
+    });
 
 </script>
