@@ -1,9 +1,11 @@
 ﻿//using Microsoft.Office.Interop.Excel;
+using Microsoft.Ajax.Utilities;
 using OfficeOpenXml;
 using OfficeOpenXml.Style;
 using RDLCReportByAsp.net.Models;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using System.Drawing;
@@ -49,7 +51,7 @@ namespace RDLCReportByAsp.net.Controllers
 
         private DataSet GetActorInfo()
         {
-            var Constr = @"Data Source=DESKTOP-T64S8Q3;Database=Movies;Trusted_Connection=True;";
+            var Constr = ConfigurationManager.AppSettings["ConnectionString"]; ;
             var dataset = new DataSet();
             var sql = "EXEC SPGetActorInfo";
             var con = new SqlConnection(Constr);
@@ -58,9 +60,6 @@ namespace RDLCReportByAsp.net.Controllers
             var adpt = new SqlDataAdapter(cmd);
             adpt.Fill(dataset);
             return dataset;
-
-
-
 
         }
 
@@ -77,7 +76,7 @@ namespace RDLCReportByAsp.net.Controllers
 
             var sheet = new DataTable("Data");
 
-            Response.AddHeader("content-disposition", "attachment;filename=ClientsData.xlsx");
+            Response.AddHeader("content-disposition", "attachment;filename=ActorData.xlsx");
             sheet.Columns.Add("ActorName", typeof(string));
             sheet.Columns.Add("Date", typeof(string));
 
@@ -138,12 +137,12 @@ namespace RDLCReportByAsp.net.Controllers
         {
             try
             {
-
-                HttpPostedFileBase Upload = Request.Files[0];
+                this.HttpContext.Session["NotValidactorSheets"] = null;
+               HttpPostedFileBase Upload = Request.Files[0];
                 string Extension = Path.GetExtension(Upload.FileName);
                 if (Extension == ".xls" || Extension == ".xlsx")
                 {
-                    string filePath = Server.MapPath("~/Upload/");
+                    string filePath = Server.MapPath("~/Upload/"+ DateTime.Now.ToString("yyyyMMddHHmmssfff")+"/");
                     bool folderExists = Directory.Exists(filePath);
                     if (!folderExists)
                     {
@@ -154,12 +153,19 @@ namespace RDLCReportByAsp.net.Controllers
 
                     var (ValidactorSheets, NotValidactorSheets) = SaveExcelSheetData(fileSavedPath);
 
-                   
-
                     if (System.IO.File.Exists(fileSavedPath))
                     {
                         System.IO.File.Delete(fileSavedPath);
                     }
+
+                    var (IsSave, Massage) = SaveValidActorSheet(ValidactorSheets);
+                    if(!IsSave)
+                        return Json(new { Message = Massage }, JsonRequestBehavior.AllowGet);
+
+                    this.HttpContext.Session["NotValidactorSheets"] = NotValidactorSheets;
+                    if(NotValidactorSheets.Count>0)
+                        return Json(new { Message = "Saved Successfully,And Check Issue Sheet" }, JsonRequestBehavior.AllowGet);
+
 
                     return Json(new { Message = "Saved Successfully" }, JsonRequestBehavior.AllowGet);
                 }
@@ -170,6 +176,151 @@ namespace RDLCReportByAsp.net.Controllers
             catch
             {
                 return Json(new { Message = "Saved Failed" }, JsonRequestBehavior.AllowGet);
+            }
+        }
+   
+        public ActionResult GetNotValidActorSheets()
+        {
+            
+
+            Response.Clear();
+            Response.ClearContent();
+            Response.ClearHeaders();
+            Response.Buffer = true;
+            Response.ContentEncoding = Encoding.UTF8;
+            Response.Cache.SetCacheability(HttpCacheability.NoCache);
+            Response.ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+            var sheet = new DataTable("Data");
+
+            Response.AddHeader("content-disposition", "attachment;filename=ActorIssueSheetData.xlsx");
+            sheet.Columns.Add("Row Number", typeof(string));
+            sheet.Columns.Add("IsValid", typeof(string));
+            sheet.Columns.Add("Massage", typeof(string));
+
+            if (Session["NotValidactorSheets"] == null)
+                sheet.Rows.Add("", "", "");
+            else
+            {
+                var notValidactorSheets = (List<ActorSheetData>)Session["NotValidactorSheets"];
+
+                if (notValidactorSheets.Count <= 0)
+                    sheet.Rows.Add("", "", "");
+                else
+                {
+
+                    foreach (var item in notValidactorSheets)
+                    {
+                        sheet.Rows.Add(item.RowNumber, item.IsValid, item.Massage);
+                    }
+
+                }
+            }
+
+
+
+
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+            using (ExcelPackage pack = new ExcelPackage())
+            {
+                ExcelWorksheet ws = pack.Workbook.Worksheets.Add("DataSheet");
+                ws.Cells["A1"].LoadFromDataTable(sheet, true);
+                if (ws.Dimension != null)
+                {
+                    int totalRow = ws.Dimension.End.Row;
+
+                    int totalCol = ws.Dimension.End.Column;
+
+                    for (int i = 1; i <= totalCol; i++)
+                    {
+                        ws.Cells[1, i].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+                        ws.Cells[1, i].Style.VerticalAlignment = ExcelVerticalAlignment.Center;
+
+                        if (i == 1)
+                        {
+                            ws.Cells[1, i].Style.Fill.PatternType = ExcelFillStyle.Solid;
+                            ws.Cells[1, i].Style.Fill.BackgroundColor.SetColor(Color.Red);
+                            ws.Cells[1, i].Style.Font.Bold = true;
+                        }
+                        else
+                        {
+                            ws.Cells[1, i].Style.Fill.PatternType = ExcelFillStyle.Solid;
+                            ws.Cells[1, i].Style.Fill.BackgroundColor.SetColor(Color.Gray);
+                            ws.Cells[1, i].Style.Font.Bold = true;
+                        }
+                    }
+
+                    ws.Cells[1, 1, totalRow, totalCol].Style.Border.Top.Style = ExcelBorderStyle.Thin;
+                    ws.Cells[1, 1, totalRow, totalCol].Style.Border.Right.Style = ExcelBorderStyle.Thin;
+                    ws.Cells[1, 1, totalRow, totalCol].Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
+                    ws.Cells[1, 1, totalRow, totalCol].Style.Border.Left.Style = ExcelBorderStyle.Thin;
+                }
+                var ms = new MemoryStream();
+                pack.SaveAs(ms);
+                ms.WriteTo(Response.OutputStream);
+            }
+
+
+            Response.Flush();
+            Response.End();
+            return View("MyView");
+
+        }
+
+        private (bool IsSave, string Massage) SaveValidActorSheet(List<Actor> validactorSheets)
+        {
+            try
+            {
+                var countOfValidActor = validactorSheets.Count;
+                if (countOfValidActor<=0)
+                    return (false, "No Found Item To Save");
+
+                var Constr = ConfigurationManager.AppSettings["ConnectionString"];
+                var conn = new SqlConnection(Constr);
+                conn.Open();
+                var dataset = new DataSet();
+                //create a new SQL Query using StringBuilder
+                var strBuilder = new StringBuilder();
+                strBuilder.Append("INSERT INTO dbo.Actor(Actor_name, Date) VALUES ");
+                
+                for (int i = 0; i < countOfValidActor; i++)
+                {
+                    strBuilder.Append(@" ('" + validactorSheets[i].ActorName + "', '" + validactorSheets[i].Date.ToString("yyyy-MM-dd HH:mm:ss") + "') ");
+                
+                    if((i+1)!= countOfValidActor)
+                    {
+                        strBuilder.Append(" , ");
+                    }
+                }
+                //foreach (var item in validactorSheets)
+                //{
+
+                //    strBuilder.Append(@"('" + item.ActorName + "', '" + item.Date.ToString("yyyy-MM-dd HH:mm:ss") + "') ");
+
+
+                //}
+
+                string sqlQuery = strBuilder.ToString();
+                try
+                {
+                    var x = sqlQuery.ToString();
+
+                    using (var command = new SqlCommand(sqlQuery, conn)) //pass SQL query created above and connection
+                    {
+                        command.ExecuteNonQuery(); //execute the Query
+                       
+                    }
+                }
+                catch (Exception ex)
+                {
+                    return (false, "Saved Faild From DataBase "+ex.ToString());
+                }
+                return (true, "Save Successfully");
+            }
+            catch (Exception ex)
+            {
+
+                return (false, "Saved Faild From DataBase");
             }
         }
 
@@ -200,27 +351,40 @@ namespace RDLCReportByAsp.net.Controllers
                     DateTime validDate;
                     for (int j = 2; j <= totalRow; j++)
                     {
-                        var ActorName = ws.Cells[j, 1].Value == null ? "" : ws.Cells[j, 1].Value.ToString();
-                        var Date = ws.Cells[j, 2].Value == null ? "" : ws.Cells[j, 2].Value.ToString();
+                        if (ws.Cells[j, 1].Value == null || ws.Cells[j, 1].Value.ToString().IsNullOrWhiteSpace() )
+                        {
+                            listNotValid.Add(new ActorSheetData() { RowNumber = j, IsValid = false, Massage = "Not Found Actor Name" });
+                            continue;
+                        }
+
+                        if (ws.Cells[j, 2].Value == null || ws.Cells[j, 2].Value.ToString().IsNullOrWhiteSpace() )
+                        {
+                            listNotValid.Add(new ActorSheetData() { RowNumber = j, IsValid = false, Massage = "Not Found Date" });
+                            continue;
+                        }
+
+                        var ActorName =  ws.Cells[j, 1].Value.ToString();
+                        var Date = ws.Cells[j, 2].Value.ToString();
 
                         if (!DateTime.TryParse(Date, out validDate))
                         {
                             listNotValid.Add(new ActorSheetData() { RowNumber = j, IsValid = false, Massage = $"Can't Convert Value: {Date} To DateTime" });
+                            continue;
                         }
 
-                        listActorValid.Add(new Actor() { ActorName =ActorName,Date = validDate });
-    
+                        listActorValid.Add(new Actor() { ActorName = ActorName, Date = validDate });
+
                     }
                     return (listActorValid, listNotValid);
 
                 }
             }
             catch (Exception ex)
-            { 
+            {
                 return (new List<Actor>(), new List<ActorSheetData>());
             }
 
-            
+
 
         }
     }

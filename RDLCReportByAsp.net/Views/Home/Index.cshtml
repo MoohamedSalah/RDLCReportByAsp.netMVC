@@ -28,10 +28,13 @@
     </div>
 
     <div class="col-md-12" style="margin: 5px;">
-        <div class="col-sm-12 col-xs-12" style="float: right; text-align: end;">
+        <div class="col-sm-6 col-xs-6" style="float: right; text-align: end;">
             <a href="" class="btn btn-info" id="DownloadFileEcxel"> @Html.Label("Download Templete", new { @class = "excel" })</a>
         </div>
 
+        <div class="col-sm-6 col-xs-6" style="float: right; text-align: end;">
+            <a href="" class="btn btn-danger" id="DownloadIssueFileEcxel"> @Html.Label("Issue Sheet", new { @class = "excel" })</a>
+        </div>
     </div>
 
 </div>
@@ -44,7 +47,7 @@
             $.ajax({
                 url: "@Url.Content("~/Home/GetActorReport")",
                 type: "POST",
-                
+
                 async: false,
                 processData: false,  // tell jQuery not to process the data
                 contentType: false,   // tell jQuery not to set contentType
@@ -54,7 +57,7 @@
                 },
                 error: function () {
                     window.open('../Reports/ActorReport.aspx', 'newtab');
-                   
+
                 }
             });
             //ReportManager.GenerateReport();
@@ -110,6 +113,14 @@
 
     });
 
+    $("#DownloadIssueFileEcxel").click(function (e) {
+        e.preventDefault();
+
+        window.location = "@Url.Content("~/Home/GetNotValidActorSheets")";
+        return;
+
+    });
+
 
     function SaveClientSheet() {
         var formdata = new FormData();
@@ -130,11 +141,13 @@
                 contentType: false,   // tell jQuery not to set contentType
                 dataType: 'json',
                 success: function (result) {
+                    debugger;
                     alert(result.Message);
 
                 },
                 error: function (result) {
-                    alert("error");
+                    debugger;
+                    alert(result.Message);
                 }
             });
 
