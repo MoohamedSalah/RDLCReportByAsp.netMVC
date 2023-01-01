@@ -1,0 +1,11 @@
+ install-package Microsoft.Owin -version 4.1.0 
+
+ install-package Microsoft.AspNet.Identity.Owin -version 2.2.3 
+
+ install-package Microsoft.Owin.Host.SystemWeb -version 4.1.0 
+
+NuGet 
+
+firebase.auth 
+
+

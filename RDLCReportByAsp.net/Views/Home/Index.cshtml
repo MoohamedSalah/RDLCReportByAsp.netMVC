@@ -116,6 +116,7 @@
     $("#DownloadIssueFileEcxel").click(function (e) {
         e.preventDefault();
 
+
         window.location = "@Url.Content("~/Home/GetNotValidActorSheets")";
         return;
 
@@ -141,12 +142,12 @@
                 contentType: false,   // tell jQuery not to set contentType
                 dataType: 'json',
                 success: function (result) {
-                    debugger;
+                    
                     alert(result.Message);
 
                 },
                 error: function (result) {
-                    debugger;
+                
                     alert(result.Message);
                 }
             });

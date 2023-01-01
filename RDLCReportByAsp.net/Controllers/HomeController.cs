@@ -1,4 +1,7 @@
 ﻿//using Microsoft.Office.Interop.Excel;
+using FirebaseAdmin;
+using FirebaseAdmin.Messaging;
+using Google.Apis.Auth.OAuth2;
 using Microsoft.Ajax.Utilities;
 using OfficeOpenXml;
 using OfficeOpenXml.Style;
@@ -15,12 +18,17 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Web;
 using System.Web.Mvc;
+using Plugin.FirebasePushNotification;
 
 
 namespace RDLCReportByAsp.net.Controllers
 {
     public class HomeController : Controller
     {
+        public HomeController()
+        {
+          //  CrossFirebasePushNotification.Current.Subscribe("all");
+        }
         public ActionResult Index()
         {
             //var data = GetActorInfo();
@@ -387,5 +395,61 @@ namespace RDLCReportByAsp.net.Controllers
 
 
         }
+
+        public ActionResult SendNotification(string token)
+        {
+            if (FirebaseApp.DefaultInstance == null)
+            {
+                FirebaseApp.Create(new AppOptions()
+                {
+                    Credential = GoogleCredential.FromFile("private_Key.json"),
+                });
+            }
+
+            var message = new Message()
+            {
+                Token= token,
+                Notification=new Notification()
+                {
+                    Title="Test Moo",
+                    Body="Body Test Moo"
+                }
+
+            };
+
+            var response=FirebaseMessaging.DefaultInstance.SendAsync(message);
+
+            return Json(new { Message = "sent" }, JsonRequestBehavior.AllowGet);
+
+        }
+
+        [HttpPost]
+        public ActionResult SendNotificationTopic()
+        {
+            if (FirebaseApp.DefaultInstance == null)
+            {
+                FirebaseApp.Create(new AppOptions()
+                {
+                    Credential = GoogleCredential.FromFile("private_Key.json"),
+                });
+            }
+
+            var message = new Message()
+            {
+                Topic="all",
+                Notification = new Notification()
+                {
+                    Title = "Test Moo",
+                    Body = "Body Test Moo By Topic"
+                }
+
+            };
+
+            var response = FirebaseMessaging.DefaultInstance.SendAsync(message);
+
+            return Json(new { Message = "sent" }, JsonRequestBehavior.AllowGet);
+
+        }
+
     }
 }
