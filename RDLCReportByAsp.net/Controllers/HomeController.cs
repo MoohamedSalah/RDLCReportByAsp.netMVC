@@ -1,8 +1,12 @@
 ﻿//using Microsoft.Office.Interop.Excel;
 using FirebaseAdmin;
 using FirebaseAdmin.Messaging;
+using FireSharp;
+using FireSharp.Config;
+using FireSharp.Interfaces;
 using Google.Apis.Auth.OAuth2;
 using Microsoft.Ajax.Utilities;
+using Microsoft.Office.Interop.Excel;
 using OfficeOpenXml;
 using OfficeOpenXml.Style;
 using RDLCReportByAsp.net.Models;
@@ -14,20 +18,26 @@ using System.Data.SqlClient;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
-using Plugin.FirebasePushNotification;
-
 
 namespace RDLCReportByAsp.net.Controllers
 {
     public class HomeController : Controller
     {
+        readonly IFirebaseClient client;
+
+        readonly IFirebaseConfig Config = new FirebaseConfig
+        {
+            AuthSecret = "T5ijQGOlmr4EH4VJSVjewBlZ0jMpb31miwtODySs",
+            BasePath = "https://rdlc-report-default-rtdb.firebaseio.com/"
+
+        };
         public HomeController()
         {
-          //  CrossFirebasePushNotification.Current.Subscribe("all");
+            client = new FirebaseClient(Config);
         }
         public ActionResult Index()
         {
@@ -82,7 +92,7 @@ namespace RDLCReportByAsp.net.Controllers
             Response.Cache.SetCacheability(HttpCacheability.NoCache);
             Response.ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
-            var sheet = new DataTable("Data");
+            var sheet = new System.Data.DataTable("Data");
 
             Response.AddHeader("content-disposition", "attachment;filename=ActorData.xlsx");
             sheet.Columns.Add("ActorName", typeof(string));
@@ -146,11 +156,11 @@ namespace RDLCReportByAsp.net.Controllers
             try
             {
                 this.HttpContext.Session["NotValidactorSheets"] = null;
-               HttpPostedFileBase Upload = Request.Files[0];
+                HttpPostedFileBase Upload = Request.Files[0];
                 string Extension = Path.GetExtension(Upload.FileName);
                 if (Extension == ".xls" || Extension == ".xlsx")
                 {
-                    string filePath = Server.MapPath("~/Upload/"+ DateTime.Now.ToString("yyyyMMddHHmmssfff")+"/");
+                    string filePath = Server.MapPath("~/Upload/" + DateTime.Now.ToString("yyyyMMddHHmmssfff") + "/");
                     bool folderExists = Directory.Exists(filePath);
                     if (!folderExists)
                     {
@@ -167,11 +177,11 @@ namespace RDLCReportByAsp.net.Controllers
                     }
 
                     var (IsSave, Massage) = SaveValidActorSheet(ValidactorSheets);
-                    if(!IsSave)
+                    if (!IsSave)
                         return Json(new { Message = Massage }, JsonRequestBehavior.AllowGet);
 
                     this.HttpContext.Session["NotValidactorSheets"] = NotValidactorSheets;
-                    if(NotValidactorSheets.Count>0)
+                    if (NotValidactorSheets.Count > 0)
                         return Json(new { Message = "Saved Successfully,And Check Issue Sheet" }, JsonRequestBehavior.AllowGet);
 
 
@@ -186,10 +196,10 @@ namespace RDLCReportByAsp.net.Controllers
                 return Json(new { Message = "Saved Failed" }, JsonRequestBehavior.AllowGet);
             }
         }
-   
+
         public ActionResult GetNotValidActorSheets()
         {
-            
+
 
             Response.Clear();
             Response.ClearContent();
@@ -199,7 +209,7 @@ namespace RDLCReportByAsp.net.Controllers
             Response.Cache.SetCacheability(HttpCacheability.NoCache);
             Response.ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
-            var sheet = new DataTable("Data");
+            var sheet = new System.Data.DataTable("Data");
 
             Response.AddHeader("content-disposition", "attachment;filename=ActorIssueSheetData.xlsx");
             sheet.Columns.Add("Row Number", typeof(string));
@@ -280,7 +290,7 @@ namespace RDLCReportByAsp.net.Controllers
             try
             {
                 var countOfValidActor = validactorSheets.Count;
-                if (countOfValidActor<=0)
+                if (countOfValidActor <= 0)
                     return (false, "No Found Item To Save");
 
                 var Constr = ConfigurationManager.AppSettings["ConnectionString"];
@@ -290,12 +300,12 @@ namespace RDLCReportByAsp.net.Controllers
                 //create a new SQL Query using StringBuilder
                 var strBuilder = new StringBuilder();
                 strBuilder.Append("INSERT INTO dbo.Actor(Actor_name, Date) VALUES ");
-                
+
                 for (int i = 0; i < countOfValidActor; i++)
                 {
                     strBuilder.Append(@" ('" + validactorSheets[i].ActorName + "', '" + validactorSheets[i].Date.ToString("yyyy-MM-dd HH:mm:ss") + "') ");
-                
-                    if((i+1)!= countOfValidActor)
+
+                    if ((i + 1) != countOfValidActor)
                     {
                         strBuilder.Append(" , ");
                     }
@@ -316,12 +326,12 @@ namespace RDLCReportByAsp.net.Controllers
                     using (var command = new SqlCommand(sqlQuery, conn)) //pass SQL query created above and connection
                     {
                         command.ExecuteNonQuery(); //execute the Query
-                       
+
                     }
                 }
                 catch (Exception ex)
                 {
-                    return (false, "Saved Faild From DataBase "+ex.ToString());
+                    return (false, "Saved Faild From DataBase " + ex.ToString());
                 }
                 return (true, "Save Successfully");
             }
@@ -359,19 +369,19 @@ namespace RDLCReportByAsp.net.Controllers
                     DateTime validDate;
                     for (int j = 2; j <= totalRow; j++)
                     {
-                        if (ws.Cells[j, 1].Value == null || ws.Cells[j, 1].Value.ToString().IsNullOrWhiteSpace() )
+                        if (ws.Cells[j, 1].Value == null || ws.Cells[j, 1].Value.ToString().IsNullOrWhiteSpace())
                         {
                             listNotValid.Add(new ActorSheetData() { RowNumber = j, IsValid = false, Massage = "Not Found Actor Name" });
                             continue;
                         }
 
-                        if (ws.Cells[j, 2].Value == null || ws.Cells[j, 2].Value.ToString().IsNullOrWhiteSpace() )
+                        if (ws.Cells[j, 2].Value == null || ws.Cells[j, 2].Value.ToString().IsNullOrWhiteSpace())
                         {
                             listNotValid.Add(new ActorSheetData() { RowNumber = j, IsValid = false, Massage = "Not Found Date" });
                             continue;
                         }
 
-                        var ActorName =  ws.Cells[j, 1].Value.ToString();
+                        var ActorName = ws.Cells[j, 1].Value.ToString();
                         var Date = ws.Cells[j, 2].Value.ToString();
 
                         if (!DateTime.TryParse(Date, out validDate))
@@ -408,16 +418,16 @@ namespace RDLCReportByAsp.net.Controllers
 
             var message = new Message()
             {
-                Token= token,
-                Notification=new Notification()
+                Token = token,
+                Notification = new Notification()
                 {
-                    Title="Test Moo",
-                    Body="Body Test Moo"
+                    Title = "Test Moo",
+                    Body = "Body Test Moo"
                 }
 
             };
 
-            var response=FirebaseMessaging.DefaultInstance.SendAsync(message);
+            var response = FirebaseMessaging.DefaultInstance.SendAsync(message);
 
             return Json(new { Message = "sent" }, JsonRequestBehavior.AllowGet);
 
@@ -431,12 +441,13 @@ namespace RDLCReportByAsp.net.Controllers
                 FirebaseApp.Create(new AppOptions()
                 {
                     Credential = GoogleCredential.FromFile("private_Key.json"),
+
                 });
             }
 
             var message = new Message()
             {
-                Topic="all",
+                Topic = "all",
                 Notification = new Notification()
                 {
                     Title = "Test Moo",
@@ -450,6 +461,115 @@ namespace RDLCReportByAsp.net.Controllers
             return Json(new { Message = "sent" }, JsonRequestBehavior.AllowGet);
 
         }
+
+        [HttpPost]
+        public ActionResult ConnetionToDatabase()
+        {
+            try
+            {
+
+                if (client != null)
+
+                    return Json(new { Message = "Connected Successfully" }, JsonRequestBehavior.AllowGet);
+                else
+                    return Json(new { Message = "Connected Faild" }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+
+                return Json(new { Message = "Connected Faild" }, JsonRequestBehavior.AllowGet);
+
+            }
+        }
+
+
+        public async Task<ActionResult> SetDataToFirebaseDataBase(Book book)
+        {
+            try
+            {
+                var setData = await client.SetTaskAsync("Books/" + book.Id, book);
+
+                return Json(new { Message = "Save Successfully" }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+
+                return Json(new { Message = "Save Faild" }, JsonRequestBehavior.AllowGet);
+
+            }
+
+        }
+        public async Task<ActionResult> PuchDataToFirebaseDataBase(Book book)
+        {
+            try
+            {
+                var setData = await client.PushTaskAsync("Books"  , book);
+
+                return Json(new { Message = "Save Successfully" }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+
+                return Json(new { Message = "Save Faild" }, JsonRequestBehavior.AllowGet);
+
+            }
+
+        }
+
+        public async Task<ActionResult> UpdateDataToFirebaseDataBase(Book book)
+        {
+            try
+            {
+                var setData = await client.UpdateTaskAsync("Books/" + book.Id, book);
+
+                return Json(new { Message = "Save Successfully" }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+
+                return Json(new { Message = "Save Faild" }, JsonRequestBehavior.AllowGet);
+
+            }
+
+        }
+
+        public async Task<ActionResult> DeleteDataToFirebaseDataBase(string Id)
+        {
+            try
+            {
+                var setData = await client.DeleteTaskAsync("Books/" + Id);
+
+                return Json(new { Message = "Delete Successfully" }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+
+                return Json(new { Message = "Delete Faild" }, JsonRequestBehavior.AllowGet);
+
+            }
+
+        }
+
+        public async Task<ActionResult> GetDataToFirebaseDataBase(string Id)
+        {
+            try
+            {
+                var setData = await client.GetTaskAsync("Books/" + Id);
+                Book result = setData.ResultAs<Book>();
+
+                return Json(new { Message = "Delete Successfully",Data= result }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+
+                return Json(new { Message = "Delete Faild" }, JsonRequestBehavior.AllowGet);
+
+            }
+
+        }
+
+
+
 
     }
 }

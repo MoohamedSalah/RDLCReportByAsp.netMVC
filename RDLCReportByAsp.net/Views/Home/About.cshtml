@@ -1,7 +1,238 @@
 ﻿@{
     ViewBag.Title = "About";
 }
-<h2>@ViewBag.Title.</h2>
-<h3>@ViewBag.Message</h3>
+<br />
 
-<p>Use this area to provide additional information.</p>
+<div class="form-group">
+    <label class="col-form-label" for="TbId">ID</label>
+    <input type="text" class="form-control" id="txtId" placeholder="ID">
+</div>
+<div class="form-group">
+    <label for="TbAuther">Auther</label>
+    <input type="text" class="form-control" id="txtAuther" placeholder="Auther">
+</div>
+
+<div class="form-group">
+    <label for="TbTitle">Title</label>
+    <input type="text" class="form-control" id="txtTitle" placeholder="Title">
+</div>
+<div class="form-group">
+    <label for="TbPrice">Price</label>
+    <input type="text" class="form-control" id="txtPrice" placeholder="Price">
+</div>
+
+
+<div class="col-sm-12 col-xs-12" style="margin: 5px;">
+    <div class="col-sm-2 col-xs-2">
+        <a href="" class="btn btn btn-link" id="ConnectedToFirebaseDataBase">Test Connection</a>
+    </div>
+    <div class="col-sm-2 col-xs-2">
+        <a href="" class="btn btn-primary" id="SetDataToFirebaseDataBase">Set Data</a>
+    </div>
+
+    <div class="col-sm-2 col-xs-2">
+        <a href="" class="btn btn-success" id="PuchDataToFirebaseDataBase">Puch Data</a>
+    </div>
+
+    <div class="col-sm-2 col-xs-2">
+        <a href="" class="btn btn-warning" id="UpdateDataToFirebaseDataBase">Update Data</a>
+    </div>
+
+    <div class="col-sm-2 col-xs-2">
+        <a href="" class="btn btn-danger" id="DeleteDataToFirebaseDataBase">Delete Data</a>
+    </div>
+    <div class="col-sm-2 col-xs-2">
+        <a href="" class="btn btn-info" id="GetDataToFirebaseDataBase">Get Data</a>
+    </div>
+
+</div>
+
+
+<script>
+    $("#ConnectedToFirebaseDataBase").click(function (e) {
+        e.preventDefault();
+
+
+
+        $.ajax({
+            url: "@Url.Content("~/Home/ConnetionToDatabase")",
+            type: "POST",
+
+            success: function (result) {
+
+                alert(result.Message);
+
+            },
+            error: function (result) {
+
+                alert(result.Message);
+            }
+        });
+
+        return;
+
+    });
+
+    $("#SetDataToFirebaseDataBase").click(function (e) {
+        e.preventDefault();
+
+        var formdata = new FormData();
+
+        formdata.append("Id", $("#txtId").val());
+        formdata.append("Auther", $("#txtAuther").val());
+        formdata.append("Title", $("#txtTitle").val());
+        formdata.append("Price", $("#txtPrice").val());
+
+
+
+        $.ajax({
+            url: "@Url.Content("~/Home/SetDataToFirebaseDataBase")",
+            type: "POST",
+            data: formdata,
+            processData: false,  // tell jQuery not to process the data
+            contentType: false,   // tell jQuery not to set contentType
+            dataType: 'json',
+
+            success: function (result) {
+
+                alert(result.Message);
+
+            },
+            error: function (result) {
+
+                alert(result.Message);
+            }
+        });
+
+        return;
+
+    });
+    $("#PuchDataToFirebaseDataBase").click(function (e) {
+        e.preventDefault();
+
+        var formdata = new FormData();
+
+        formdata.append("Id", $("#txtId").val());
+        formdata.append("Auther", $("#txtAuther").val());
+        formdata.append("Title", $("#txtTitle").val());
+        formdata.append("Price", $("#txtPrice").val());
+
+
+
+        $.ajax({
+            url: "@Url.Content("~/Home/PuchDataToFirebaseDataBase")",
+            type: "POST",
+            data: formdata,
+            processData: false,  // tell jQuery not to process the data
+            contentType: false,   // tell jQuery not to set contentType
+            dataType: 'json',
+
+            success: function (result) {
+
+                alert(result.Message);
+
+            },
+            error: function (result) {
+
+                alert(result.Message);
+            }
+        });
+
+        return;
+
+    });
+
+    $("#UpdateDataToFirebaseDataBase").click(function (e) {
+        e.preventDefault();
+
+        var formdata = new FormData();
+
+        formdata.append("Id", $("#txtId").val());
+        formdata.append("Auther", $("#txtAuther").val());
+        formdata.append("Title", $("#txtTitle").val());
+        formdata.append("Price", $("#txtPrice").val());
+
+
+
+        $.ajax({
+            url: "@Url.Content("~/Home/UpdateDataToFirebaseDataBase")",
+            type: "POST",
+            data: formdata,
+            processData: false,  // tell jQuery not to process the data
+            contentType: false,   // tell jQuery not to set contentType
+            dataType: 'json',
+
+            success: function (result) {
+
+                alert(result.Message);
+
+            },
+            error: function (result) {
+
+                alert(result.Message);
+            }
+        });
+
+        return;
+
+    });
+
+    $("#DeleteDataToFirebaseDataBase").click(function (e) {
+        e.preventDefault();
+
+      
+
+        $.ajax({
+            url: "@Url.Content("~/Home/DeleteDataToFirebaseDataBase")",
+            type: "POST",
+            data: { Id: $("#txtId").val() },
+            dataType: 'json',
+
+            success: function (result) {
+
+                alert(result.Message);
+
+            },
+            error: function (result) {
+
+                alert(result.Message);
+            }
+        });
+
+        return;
+
+    });
+
+    $("#GetDataToFirebaseDataBase").click(function (e) {
+        e.preventDefault();
+
+      
+
+        $.ajax({
+            url: "@Url.Content("~/Home/GetDataToFirebaseDataBase")",
+            type: "POST",
+            data: { Id: $("#txtId").val() },
+            dataType: 'json',
+
+            success: function (result) {
+
+                //alert(result.Message);
+                $("#txtId").val(result.Data.Id);
+                $("#txtAuther").val(result.Data.Auther);
+                $("#txtTitle").val(result.Data.Title);
+                $("#txtPrice").val(result.Data.Price);
+
+            },
+            error: function (result) {
+
+                alert(result.Message);
+            }
+        });
+
+        return;
+
+    });
+
+
+
+</script>
