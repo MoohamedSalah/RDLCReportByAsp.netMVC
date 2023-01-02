@@ -52,15 +52,17 @@
 
 
     <script src='https://www.gstatic.com/firebasejs/6.4.2/firebase-app.js' type="text/javascript"></script>
+    <script src="https://www.gstatic.com/firebasejs/6.1.1/firebase-auth.js"></script>
+
 
     <script src='https://www.gstatic.com/firebasejs/6.4.2/firebase-messaging.js' type="text/javascript"></script>
-
+    <script src="~/Scripts/FirebaseConfig.js"></script>
     <script>
         var Ctoken = "";
         $("#SendNotification").click(function (e) {
             e.preventDefault();
 
-          
+
             $.ajax({
                 url: "@Url.Content("~/Home/SendNotification")",
                 type: "POST",
@@ -84,23 +86,23 @@
         });
 
         $("#SendNotificationTopic").click(function (e) {
-            debugger;
+
             e.preventDefault();
 
-           
+
             $.ajax({
                 url: "@Url.Content("~/Home/SendNotificationTopic")",
                 type: "POST",
-                
+
               /*  dataType: 'json',*/
                 success: function (result) {
-                    debugger;
+
 
                     alert("Sent");
 
                 },
                 error: function (result) {
-                    debugger;
+
 
                     alert("Fail");
                 }
@@ -112,16 +114,7 @@
         $(function () {
 
 
-            const config = {
-                apiKey: "AIzaSyB4ORpeBRAYmN4uMUH9m2-wNXAyQcoDsc4",
-                authDomain: "rdlc-report.firebaseapp.com",
-                projectId: "rdlc-report",
-                storageBucket: "rdlc-report.appspot.com",
-                messagingSenderId: "501534950048",
-                appId: "1:501534950048:web:ec442890e1a4088049ffc5",
-                measurementId: "G-4Z8RHWE4DQ"
-            };
-            firebase.initializeApp(config);
+
 
             const messaging = firebase.messaging();
 

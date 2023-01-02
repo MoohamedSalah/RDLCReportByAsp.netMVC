@@ -1,17 +1,134 @@
 ﻿@{
     ViewBag.Title = "Contact";
 }
-<h2>@ViewBag.Title.</h2>
-<h3>@ViewBag.Message</h3>
+<br />
+<div class="form-group">
+    <label class="col-form-label" for="TbEmailUser">Email User</label>
+    <input type="text" class="form-control" id="txtEmailUser" placeholder="Email User">
+</div>
+<div class="form-group">
+    <label for="TbPassword">Password</label>
+    <input type="password" class="form-control" id="txtPassword" placeholder="Password">
+</div>
 
-<address>
-    One Microsoft Way<br />
-    Redmond, WA 98052-6399<br />
-    <abbr title="Phone">P:</abbr>
-    425.555.0100
-</address>
 
-<address>
-    <strong>Support:</strong>   <a href="mailto:Support@example.com">Support@example.com</a><br />
-    <strong>Marketing:</strong> <a href="mailto:Marketing@example.com">Marketing@example.com</a>
-</address>
+
+<div class="col-sm-12 col-xs-12" style="margin: 5px;">
+    <div class="col-sm-2 col-xs-2">
+        <a href="" class="btn btn btn-primary" id="SignUpToFirebaseDataBase">Sign Up</a>
+    </div>
+
+    <div class="col-sm-2 col-xs-2">
+        <a href="" class="btn btn btn-success" id="SignInToFirebaseDataBase">Sign In</a>
+    </div>
+
+    <div class="col-sm-2 col-xs-2">
+        <a href="" class="btn btn btn-danger" id="signOutToFirebaseDataBase">Sign Out</a>
+    </div>
+    <div class="col-sm-2 col-xs-2">
+        <input  type="image" src="~/Upload/GoogleIcon.png" width="35" height="35" id="signInGoogleToFirebaseDataBase">
+    </div>
+
+
+</div>
+
+<script>
+
+    $("#SignUpToFirebaseDataBase").click(function (e) {
+        e.preventDefault();
+
+        firebase.auth().createUserWithEmailAndPassword($("#txtEmailUser").val(), $("#txtPassword").val())
+            .then((userCredential) => {
+                // Signed in
+                var user = userCredential.user;
+                console.log(userCredential.user);
+                alert("Created Successfully")
+
+            })
+            .catch((error) => {
+                var errorCode = error.code;
+                var errorMessage = error.message;
+
+                console.log(errorCode);
+                console.log(errorMessage);
+                alert("Created Faild");
+
+            });
+
+    });
+    $("#SignInToFirebaseDataBase").click(function (e) {
+        e.preventDefault();
+
+        firebase.auth().signInWithEmailAndPassword($("#txtEmailUser").val(), $("#txtPassword").val())
+            .then((userCredential) => {
+                // Signed in
+                var user = userCredential.user;
+                console.log(userCredential.user);
+                alert("Sign In Successfully")
+
+            })
+            .catch((error) => {
+                var errorCode = error.code;
+                var errorMessage = error.message;
+
+                console.log(errorCode);
+                console.log(errorMessage);
+                alert("Sign In Faild " + errorMessage);
+
+            });
+
+    });
+
+    $("#signOutToFirebaseDataBase").click(function (e) {
+        e.preventDefault();
+        firebase.auth().signOut()
+            .then(() => {
+                alert("Sign Out Successfully")
+            })
+            .catch(() => {
+                alert("Sign Out Faild " + errorMessage);
+            });
+    });
+
+    $("#signInGoogleToFirebaseDataBase").click(function (e) {
+        e.preventDefault();
+        var provider = new firebase.auth.GoogleAuthProvider();
+        provider.addScope('https://www.googleapis.com/auth/contacts.readonly');
+
+        firebase.auth()
+            .signInWithPopup(provider)
+            .then((result) => {
+
+                var credential = result.credential;
+
+                // This gives you a Google Access Token. You can use it to access the Google API.
+                var token = credential.accessToken;
+                console.log(token);
+
+                // The signed-in user info.
+                var user = result.user;
+                console.log(errorCode);
+
+                // ...
+                alert("Sign In Successfully")
+
+            }).catch((error) => {
+                // Handle Errors here.
+                var errorCode = error.code;
+                var errorMessage = error.message;
+                // The email of the user's account used.
+                var email = error.email;
+                // The firebase.auth.AuthCredential type that was used.
+                var credential = error.credential;
+                console.log(errorCode);
+                console.log(errorMessage);
+                console.log(email);
+                console.log(credential);
+
+                alert("Sign In Faild " + errorMessage);
+                // ...
+            });
+
+    });
+
+</script>
